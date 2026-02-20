@@ -1,0 +1,60 @@
+[
+    {
+        "order_id": 101,
+        "customer_name": "Alice Smith",
+        "email": "alice@example.com",
+        "price": 45.99,
+        "is_priority": true
+    },
+    {
+        "order_id": "102",
+        "customer_name": "Bob Jones",
+        "email": "bob@example.com",
+        "price": "12.50"
+    },
+    {
+        "order_id": 103,
+        "customer_name": "Charlie Brown",
+        "email": "charlie@example",
+        "price": 100.0,
+        "is_priority": "yes"
+    },
+    {
+        "order_id": 104,
+        "customer_name": "Diana Ross",
+        "email": "diana@example.com",
+        "price": -5.00
+    },
+    {
+        "order_id": null,
+        "customer_name": "Eve Adams",
+        "email": "eve@example.com",
+        "price": 25.0
+    },
+    {
+        "order_id": 106,
+        "customer_name": "Charlie Brown",
+        "email": "charlie@example.com",
+        "price": 100.0,
+        "is_priority": "yes"
+    },
+    {
+        "order_id": 107,
+        "customer_name": "Diana Ross",
+        "email": "diana@example.com",
+        "price": -5.00
+    },
+    {
+        "order_id": 108,
+        "customer_name": "Charlie Brown",
+        "email": "charlie@example",
+        "price": 1055.0,
+        "is_priority": "yes"
+    },
+    {
+        "order_id": 109,
+        "customer_name": "",
+        "email": "diana@example.com",
+        "price": -5.00
+    }
+]
