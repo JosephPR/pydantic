@@ -13,6 +13,9 @@ Welcome to the Pydantic learning repository! This folder contains examples and t
 *   **/examples/**: Contains scripts demonstrating various Pydantic features.
     *   `hello_world.py`: A basic, introductory script.
     *   `learning_pydantic.py`: A comprehensive tutorial covering core concepts.
+*   **/data_cleaner/**: Contains an example of using Pydantic to parse and clean messy JSON data.
+    *   `messy_orders.json`: A dummy data file containing various data inconsistencies and errors.
+    *   `validate_orders.py`: A script that uses Pydantic to validate the data in `messy_orders.json`.
 
 ## Key Concepts Covered in `learning_pydantic.py`
 
@@ -38,3 +41,13 @@ Then, you can run any of the example scripts:
 ```bash
 python examples/learning_pydantic.py
 ```
+
+## Running the Data Cleaner Example
+
+To see how Pydantic handles inconsistent real-world data, run the data cleaner script:
+
+```bash
+python data_cleaner/validate_orders.py
+```
+
+This script will read `data_cleaner/messy_orders.json` and attempt to validate each order against a strict `CustomerOrder` schema, printing out which orders succeeded (and how Pydantic coerced the data) and which failed (with detailed error messages).
