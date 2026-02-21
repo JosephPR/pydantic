@@ -1,9 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from typing import List
+from pydantic_ai import Agent
 
 # We import the schemas from our dedicated models file
-from app.schemas import CustomerOrder, OrderProcessSummary
-
+# Note: adjusted import path to match the current directory structure
+from schemas import CustomerOrder, OrderProcessSummary
 
 app = FastAPI(title="Real-World Order Processor API")
 
@@ -47,3 +48,20 @@ async def clean_order_batch(orders: List[CustomerOrder]):
         "message": f"Successfully validated and cleaned {len(orders)} orders!",
         "clean_data": orders
     }
+
+# 4. Create an endpoint that uses Pydantic AI to extract orders from raw text
+# Initialize the Pydantic AI Agent.
+# 'openai:gpt-4o' is the default model; the agent will return data matching the CustomerOrder schema.
+order_agent = Agent(
+    'openai:gpt-4o',
+    output_type=CustomerOrder,
+    system_prompt="You are an order extraction assistant. Extract the customer's order details from the provided text into the structured format required."
+)
+
+@app.post("/extract-order", response_model=CustomerOrder)
+async def extract_order(order_text: str = Body(..., embed=True)):
+    # Run the agent synchronously to pass the raw text to the LLM
+    result = order_agent.run_sync(order_text)
+    
+    # Return the fully structured, validated Pydantic model
+    return result.data
