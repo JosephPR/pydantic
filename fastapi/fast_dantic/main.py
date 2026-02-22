@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Body
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from pydantic_ai import Agent
 
@@ -8,8 +9,32 @@ from schemas import CustomerOrder, OrderProcessSummary
 
 app = FastAPI(title="Real-World Order Processor API")
 
+# Configure CORS so the Next.js frontend can communicate with this API
+origins = [
+    "http://localhost:3000",
+    "http://localhost:3001" # Added just in case
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # A simple in-memory "database" to store our orders
 fake_orders_db: List[CustomerOrder] = []
+
+# Import our mock database of products from the new dummy_data file
+from dummy_data import fake_products_db
+
+@app.get("/products")
+async def get_products():
+    """
+    Retrieve all available products.
+    """
+    return fake_products_db
 
 @app.get("/orders", response_model=List[CustomerOrder])
 async def get_orders():
@@ -69,16 +94,24 @@ async def clean_order_batch(orders: List[CustomerOrder]):
 # 4. Create an endpoint that uses Pydantic AI to extract orders from raw text
 # Initialize the Pydantic AI Agent.
 # 'openai:gpt-4o' is the default model; the agent will return data matching the CustomerOrder schema.
+# Build a dynamic string of our product catalog for the AI
+catalog_prompt = "\n".join([f"- {p['item_name']} (SKU: {p['sku']}): ${p['price']} each" for p in fake_products_db])
+
 order_agent = Agent(
     'openai:gpt-4o',
     output_type=CustomerOrder,
-    system_prompt="You are an order extraction assistant. Extract the customer's order details from the provided text into the structured format required."
+    system_prompt=(
+        "You are an order extraction assistant. Extract the customer's order details from the provided text into the structured format required.\n\n"
+        "IMPORTANT PRICING RULES:\n"
+        "You MUST calculate the `price` field strictly using the following product catalog for all items ordered:\n"
+        f"{catalog_prompt}\n\n"
+        "If the customer doesn't specify an ID, name, or email, use a random integer order_id, 'Guest User' for customer_name, and 'guest@example.com' for email."
+    )
 )
 
 @app.post("/extract-order", response_model=CustomerOrder)
 async def extract_order(order_text: str = Body(..., embed=True)):
     # Run the agent asynchronously to pass the raw text to the LLM
     result = await order_agent.run(order_text)
-    fake_orders_db.append(result.output)
     # Return the structured data from the agent run.
     return result.output
