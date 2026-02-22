@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Sparkles, Loader2, Package, CheckCircle2, BrainCircuit } from "lucide-react";
+import { ShoppingCart, Sparkles, Loader2, Package, CheckCircle2, BrainCircuit, Search } from "lucide-react";
 import Link from "next/link";
 
 interface Product {
@@ -42,6 +42,9 @@ export default function Storefront() {
   // AI Order State
   const [magicText, setMagicText] = useState("");
   const [isMagicLoading, setIsMagicLoading] = useState(false);
+  
+  // Search State
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Checkout State
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -389,9 +392,26 @@ export default function Storefront() {
 
         {/* Products Grid */}
         <section>
-          <h2 className="mb-8 text-2xl font-bold">Featured Products</h2>
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h2 className="text-2xl font-bold">Featured Products</h2>
+            <div className="relative max-w-md w-full">
+              <input
+                type="text"
+                placeholder="Search agents by name or SKU..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 pl-10 text-zinc-100 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-zinc-500" />
+            </div>
+          </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
+            {products
+              .filter(p => 
+                p.item_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                p.sku.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((product) => (
               <motion.div
                 key={product.sku}
                 whileHover={{ y: -4 }}
@@ -417,8 +437,7 @@ export default function Storefront() {
                       ${product.price.toFixed(2)}
                     </span>
                   </div>
-                  <div className="mt-auto pt-6 flex items-center justify-between">
-                    <span className="text-sm text-zinc-500">{product.stock} in stock</span>
+                  <div className="mt-auto pt-6 flex items-center justify-end">
                     <button
                       onClick={() => addToCart(product)}
                       className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-white"

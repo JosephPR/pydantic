@@ -117,11 +117,11 @@ export default function ProductPage() {
 
             <div className="mb-10 p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800 flex items-center justify-between">
               <div>
-                <p className="text-zinc-100 font-medium mb-1">Ready for deployment</p>
-                <p className="text-sm text-zinc-500">{product.stock} isolated instances available</p>
+                <p className="text-zinc-100 font-medium mb-1">Unlimited Integration License</p>
+                <p className="text-sm text-zinc-500">Deploy instantly across your organization</p>
               </div>
               <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
-                <CheckCircle2 className="w-4 h-4" /> In Stock
+                <CheckCircle2 className="w-4 h-4" /> Ready for Deployment
               </div>
             </div>
 

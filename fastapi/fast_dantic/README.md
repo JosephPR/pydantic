@@ -43,10 +43,10 @@ Here is the exact step-by-step UX and backend flow of how that works:
 3.  **Backend Agent (`main.py`)**: 
     *   FastAPI routes the text to our `pydantic_ai` Agent powered by `gpt-4o`.
     *   The Agent is instructed to read the text and compare it against the current product catalog (to get exact SKUs and prices).
-    *   *Crucially*, the Agent is constrained by `output_type=CustomerOrder`. This forces the LLM to output perfect JSON that exactly matches our Pydantic schema!
+    *   *Crucially*, the Agent is constrained by `output_type=CustomerOrder`. This forces the LLM to output perfect JSON that exactly matches our Pydantic schema! If a user omits their name or email, the Agent strictly follows its prompt instructions to supply a "Guest User" fallback so it doesn't fail validation.
 4.  **Backend Response**: The API returns that perfectly formatted, valid JSON order object right back to the React frontend.
-5.  **Frontend Handoff**: React receives the structured JSON order from the AI and *immediately* turns around to send it to the manual checkout route: `POST http://localhost:8000/clean-order`.
-6.  **Backend Database**: The `/clean-order` route receives the payload, validates it one last time, and writes it permanently to the SQLite database (`database.db`) using `SQLModel`.
+5.  **Frontend Handoff**: React receives the structured JSON order from the AI and *immediately* turns around to send it to the manual checkout route: `POST http://localhost:8000/clean-order`. (Note: The manual native slider-cart provides explicit input fields requiring the user's Name and Email before authorizing the payload).
+6.  **Backend Database**: The `/clean-order` route receives the payload, validates it one last time, and writes both the parent `Order` and all child `OrderItem` relational rows permanently to the SQLite database (`database.db`) using `SQLModel`. You can view the full structured receipts by mapping the inner components at the `GET /orders` endpoint!
 7.  **UX Success**: React detects the database success and shows a green success banner to the user. From the user's perspective, they typed a sentence and instantly checked out!
 
 ---
