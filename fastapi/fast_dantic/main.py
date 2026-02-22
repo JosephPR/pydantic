@@ -5,7 +5,7 @@ import logfire
 from contextlib import asynccontextmanager
 
 # FastAPI core tools. FastAPI is the web framework, Body lets us extract JSON from requests, and Depends handles dependency injection (like DB sessions).
-from fastapi import FastAPI, Body, Depends
+from fastapi import FastAPI, Body, Depends, HTTPException
 
 # CORSMiddleware: Tells the backend which frontends (like localhost:3000) are allowed to securely talk to it.
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,7 +22,7 @@ from sqlmodel import Session, select
 # Local imports
 from database import engine, get_session, create_db_and_tables
 from models import Product, Order, OrderItem
-from schemas import CustomerOrder, OrderProcessSummary
+from schemas import CustomerOrder, OrderProcessSummary, SolutionProposal
 from dummy_data import fake_products_db
 
 # ==========================================
@@ -87,6 +87,16 @@ async def get_products(session: Session = Depends(get_session)):
     products = session.exec(select(Product)).all()
     return products
 
+@app.get("/products/{sku}")
+async def get_product_by_sku(sku: str, session: Session = Depends(get_session)):
+    """
+    Retrieve a specific product by its unique SKU.
+    """
+    product = session.exec(select(Product).where(Product.sku == sku)).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
 @app.get("/orders")
 async def get_orders(session: Session = Depends(get_session)):
     """
@@ -94,7 +104,15 @@ async def get_orders(session: Session = Depends(get_session)):
     Useful for an admin dashboard to see all successfully processed sales.
     """
     orders = session.exec(select(Order)).all()
-    return orders
+    
+    # Manually serialize orders to include their related nested items
+    result = []
+    for order in orders:
+        order_dict = order.model_dump()
+        order_dict["items"] = [item.model_dump() for item in order.items]
+        result.append(order_dict)
+        
+    return result
 
 # Notice how we also define the type of the data we are returning using response_model!
 # This makes FastAPI validate the data WE send out, not just the data coming in.
@@ -120,9 +138,12 @@ def process_multiple_orders(orders: List[CustomerOrder], session: Session = Depe
         for item in order_data.items:
             db_item = OrderItem(
                 order_id=db_order.id, # Map back to the primary key of the new Order row
+                product_id=item.product_id,
                 item_name=item.item_name,
                 sku=item.sku,
-                quantity=item.quantity
+                quantity=item.quantity,
+                price=item.price,
+                image_url=item.image_url
             )
             session.add(db_item)
         session.commit()
@@ -165,9 +186,12 @@ async def clean_single_order(order: CustomerOrder, session: Session = Depends(ge
     for item in order.items:
         db_item = OrderItem(
             order_id=db_order.id,
+            product_id=item.product_id,
             item_name=item.item_name,
             sku=item.sku,
-            quantity=item.quantity
+            quantity=item.quantity,
+            price=item.price,
+            image_url=item.image_url
         )
         session.add(db_item)
     session.commit()
@@ -211,4 +235,32 @@ async def extract_order(order_text: str = Body(..., embed=True)):
     result = await order_agent.run(order_text)
     
     # Return the perfectly structured data from the agent run!
+    return result.output
+
+# ==========================================
+# Solutions Architect Feature
+# ==========================================
+
+# Initialize a second Pydantic AI Agent designed to act as a sales engineer.
+solution_agent = Agent(
+    'openai:gpt-4o',
+    output_type=SolutionProposal,
+    system_prompt=(
+        "You are an expert Enterprise Solutions Architect for 'FastDantic', a company that sells B2B Enterprise AI Agents.\n\n"
+        "The user will describe a business problem they are facing.\n"
+        "You must analyze their problem and recommend a tailored suite of AI agents from our catalog that perfectly solves their needs.\n\n"
+        "CATALOG PRICING RULES:\n"
+        "You MUST calculate the `total_estimated_cost` field strictly using the prices from the following catalog for the agents you recommend:\n"
+        f"{catalog_prompt}\n\n"
+        "Keep your `reason` pitches short, punchy, and highly relevant to the user's specific problem."
+    )
+)
+
+@app.post("/recommend-solutions", response_model=SolutionProposal)
+async def recommend_solutions(problem_description: str = Body(..., embed=True)):
+    """
+    Takes a raw string describing a business problem and returns a highly structured 
+    SolutionProposal JSON containing specific agent recommendations and pricing.
+    """
+    result = await solution_agent.run(problem_description)
     return result.output

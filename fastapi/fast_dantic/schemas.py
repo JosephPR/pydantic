@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 # ==========================================
@@ -8,10 +8,13 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 # It keeps them separated from the actual routing logic and the database models.
 # Schemas are purely for VALIDATING the data coming in from the user and going out to the user.
 
-class Product(BaseModel):
+class OrderItemSchema(BaseModel):
+    product_id: Optional[int] = None
     item_name: str
     sku: str
     quantity: int
+    price: Optional[float] = None
+    image_url: Optional[str] = None
 
 
 class CustomerOrder(BaseModel):
@@ -29,8 +32,8 @@ class CustomerOrder(BaseModel):
     # Default values mean the user doesn't have to provide this in their JSON payload
     is_priority: bool = False
     
-    # This expects a list of dictionaries that match the `Product` schema above
-    items: List[Product]
+    # This expects a list of dictionaries that match the `OrderItemSchema` schema above
+    items: List[OrderItemSchema]
     
     # Note: Although your price field already has Field(gt=0)
     # which theoretically prevents it from being zero or negative,
@@ -53,3 +56,17 @@ class OrderProcessSummary(BaseModel):
     message: str
     total_revenue: float
     priority_orders: int
+
+# ==========================================
+# Solutions Architect Schemas
+# ==========================================
+class RecommendedProduct(BaseModel):
+    item_name: str
+    sku: str
+    price: float
+    reason: str = Field(description="A short, compelling 1-2 sentence sales pitch on why this specific agent solves the user's problem.")
+
+class SolutionProposal(BaseModel):
+    summary: str = Field(description="An executive summary of the user's problem and how this suite of AI agents will solve it.")
+    recommended_agents: List[RecommendedProduct]
+    total_estimated_cost: float = Field(description="The sum of the prices of all recommended agents.")

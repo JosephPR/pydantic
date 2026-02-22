@@ -19,6 +19,9 @@ class Product(SQLModel, table=True):
     price: float
     stock: int
     image_url: str
+    
+    # New detailed description for the product page
+    description: str = Field(default="Experience the power of enterprise AI.")
 
 class Order(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -41,9 +44,13 @@ class OrderItem(SQLModel, table=True):
     order_id: int = Field(default=None, foreign_key="order.id")
     order: Optional[Order] = Relationship(back_populates="items")
     
+    product_id: Optional[int] = Field(default=None, foreign_key="product.id")
+    
     # We store the item details here. Why not just a relationship to Product?
     # Because if a product's price changes *tomorrow*, we don't want it to change 
     # the receipt of the order from *yesterday*.
     item_name: str
     sku: str
     quantity: int
+    price: Optional[float] = None
+    image_url: Optional[str] = None
